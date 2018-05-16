@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+</head>
+<style type="text/css">
+
+.mt-100 {
+  margin-top: 100px; 
+}
+.mb-100 {
+  margin-bottom: 100px;
+}
+
+.icon {
+  width: 32px;
+  height: 32px;
+  text-align: center;
+  padding: 7px 8px;
+  border: 2px solid;
+  border-radius: 50%;
+}
+
+.header {
+  padding-top: 50px;
+  background-color: #eee;
+  overflow: hidden;
+}
+.footer {
+  color: #887;
+  background-color: #eee;
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+.content {
+  position: relative;
+  display: table;
+  width: 100%;
+  min-height: 100vh;
+}
+.pull-middle {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.btn {
+  padding-left: 25px;
+  padding-right: 25px;
+}
+.btn-circle {
+  border-radius: 20px;
+}
+
+.input-group input {
+  border: 0;
+  box-shadow: none;
+  padding-right: 30px;
+}
+.input-group input:focus,
+.input-group input:active {
+  outline: 0;
+  box-shadow: none;
+}
+.input-group-btn:last-child>.btn {
+  z-index: 2;
+  margin-left: -18px;   
+  border-radius: 20px;
+}
+
+.phone {
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 65px 15px 55px;
+  border: 2px solid #ddd;
+  border-radius: 20px;
+  background-color: #222;
+  box-shadow: 20px 20px 40px #887;
+}
+</style>
+<body>
+  <div class="wrapper">
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navigation">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand text-uppercase" href="index.html">Reddit Genology</a>
+        </div>
+
+        <div class="collapse navbar-collapse" id="navigation">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="graph.html">Graph view</a></li>
+            <li><a href="chord.html">Chord view</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <header class="header">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-4 col-md-offset-1">
+            <div class="content">
+              <div class="pull-middle">
+                <h1 class="page-header">Tracing Community Genealogy.</h1>
+                <p class="lead">An effort to visualize reddit genealogy.</p>
+              </div>              
+            </div>
+          </div>
+          <div class="col-md-5 col-md-offset-1 text-center mt-100 mb-100">
+            <div class="phone">
+              <img class="img-responsive img-rounded" src="https://chenhaot.com/pubs/community_genealogy/example.png">
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    <footer class="footer text-center">
+      <div class="container">
+        <small> Thanks for visiting!!</small>
+      </div>
+    </footer>
+  </div>  
+</body>
