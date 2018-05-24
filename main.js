@@ -7,7 +7,7 @@ barabasiAlbert = BarabasiAlbert(graph);
 graphVis = GraphVis(graph),
 previousTime = -1,
 tickTimes = [],
-tickSamples = 10,
+tickSamples = 5,
 nodeStep = 1000;
 var count = 0;
 graphVis.onTick(function() {
@@ -15,13 +15,12 @@ graphVis.onTick(function() {
   var currentTime = Date.now();
   if (previousTime !== -1) {
     tickTimes.push(currentTime - previousTime);
-
     if (tickTimes.length === tickSamples) {
       tickTimes.length = 0;
-      //addNodes(nodeStep);
     }
   }
   previousTime = currentTime;
+  console.log(count)
 });
 
 function addNodes(n) {

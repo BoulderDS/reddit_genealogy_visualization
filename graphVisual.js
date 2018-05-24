@@ -1,15 +1,16 @@
 function GraphVis(graph) {
   color = d3.scale.category10()
+  count = 0
+  radius = 5
   var margin = {
       top: -100,
       right: -50,
       bottom: -10,
       left: -50
     },
-    width = 1000 - margin.left - margin.right,
-    height = 900 - margin.top - margin.bottom;
+    width = 1200 - margin.left - margin.right,
+    height = 800 - margin.top - margin.bottom;
   var zoom = d3.behavior.zoom()
-    .translate([0, 0])
     .scale(1)
     .scaleExtent([1, 20])
     .on("zoom", zoomed);
@@ -18,15 +19,15 @@ function GraphVis(graph) {
     svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
   }
   force = d3.layout.force()
-    .charge(-400)
-    .linkDistance(50)
-    .gravity(0.05)
+    .charge(-300)
+    .linkDistance(150)
+    .gravity(0.0001)
     .size([width, height]),
     svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.right + ")")
+    .attr("transform", "translate(" + 10 + "," + 10 + ")")
     .call(zoom),
     link = svg.selectAll('.link').data(graph.links),
     node = svg.selectAll('.node').data(graph.nodes);
@@ -50,8 +51,7 @@ function GraphVis(graph) {
     force
       .nodes(graph.nodes)
       .links(graph.links)
-      .start();
-
+    force.start();
     link = svg.selectAll('.link').data(graph.links);
     node = svg.selectAll('.node').data(graph.nodes);
     link.enter().append('line')
@@ -66,7 +66,7 @@ function GraphVis(graph) {
     node.enter().append('g');
     node.attr("class", "node").call(force.drag);
     node.append("circle")
-      .attr("r", 4)
+      .attr("r", 5)
       .style("fill", function(d){ return color(d.id) });
     node.append("title")
       .text(function(d) {
@@ -75,7 +75,7 @@ function GraphVis(graph) {
     node.append("text")
       .attr("dy", -5)
      .attr("text-anchor", "middle")
-      .attr("font-size", "10px")
+      .attr("font-size", "12px")
       .text(function(d) {
         return d.id;
       });
@@ -93,9 +93,14 @@ function GraphVis(graph) {
     label.text(function(d) {
       return d;
     });
-
   }
   force.on('tick', function() {
+    count+=1
+    // if(count == graph.nodes.length){
+    //   force.stop()
+    //   count=1
+    //   console.log('max count')
+    // }
     link.attr('x1', function(d) {
         return d.source.x;
       })
@@ -109,17 +114,41 @@ function GraphVis(graph) {
         return d.target.y;
       });
     node.attr('cx', function(d) {
+      if(d.x < 0){
+        d.x  =500+d.x
+        return d.x
+      }
+
+      if(d.x > 1500){
+        d.x = d.x - Math.floor(d.x/1000)*1000;
+        if(d.x < 0 ){
+          console.log(d.x)
+        }
         return d.x;
+      } else{
+        return d.x
+      }
       })
       .attr('cy', function(d) {
+      if(d.y < 0){
+        d.y  =500+d.y
+        return d.y
+      }
+      if(d.y > 900) {
+        d.y = d.y - Math.floor(d.y/1000)*1000;
+        if(d.y < 0 || d.y > 1000){
+          console.log(d.y)
+        }
         return d.y;
+      } else {
+        return d.y;
+      }
       });
     node.attr("transform", function(d) {
-      return "translate(" + d.x + "," + d.y + ")";
+      return "translate(" + d.x + "," +d.y+ ")";
     });
-    onTick();
+    //onTick();
   });
-
   function destroy() {
     d3.selectAll("svg").remove()
   }
