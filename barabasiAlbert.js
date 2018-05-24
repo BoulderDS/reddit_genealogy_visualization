@@ -8,7 +8,7 @@ function BarabasiAlbert(graph) {
     count = 0
     var xobj = new XMLHttpRequest();
     xobj.overrideMimeType("application/json");
-    xobj.open('GET', 'filtered_graph.json');
+    xobj.open('GET', 'sample_graph.json');
     xobj.send(null);
     xobj.onreadystatechange = function() {
       if (xobj.readyState == 4 && xobj.status == "200") {

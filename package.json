@@ -16,11 +16,8 @@
     "express": "^4.16.3"
   },
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/BoulderDS/reddit_genology_visualization.git"
-  },
+   },
   "bugs": {
-    "url": "https://github.com/BoulderDS/reddit_genology_visualization/issues"
-  },
-  "homepage": "https://github.com/BoulderDS/reddit_genology_visualization#readme"
+   },
+  "homepage": ""
 }

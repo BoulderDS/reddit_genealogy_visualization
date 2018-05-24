@@ -1,25 +1,26 @@
 function GraphVis(graph) {
+  color = d3.scale.category10()
   var margin = {
       top: -100,
       right: -50,
       bottom: -10,
       left: -50
     },
-    width = 1200 - margin.left - margin.right,
-    height = 800 - margin.top - margin.bottom;
+    width = 1000 - margin.left - margin.right,
+    height = 900 - margin.top - margin.bottom;
   var zoom = d3.behavior.zoom()
-    .scaleExtent([1, 10])
+    .translate([0, 0])
+    .scale(1)
+    .scaleExtent([1, 20])
     .on("zoom", zoomed);
 
   function zoomed() {
     svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
   }
   force = d3.layout.force()
-    .charge(function(d) {
-      return -50;
-    })
-    .linkDistance(20)
-    .gravity(0.2)
+    .charge(-500)
+    .linkDistance(100)
+    .gravity(0.1)
     .size([width, height]),
     svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -28,20 +29,20 @@ function GraphVis(graph) {
     .attr("transform", "translate(" + margin.left + "," + margin.right + ")")
     .call(zoom),
     link = svg.selectAll('.link').data(graph.links),
-    node = svg.selectAll('.node').data(graph.nodes),
+    node = svg.selectAll('.node').data(graph.nodes);
     onTick = function() {};
   var container = svg.append("g");
   svg.append('defs').append('marker')
     .attr('id', 'arrowhead')
-    .attr('viewBox', '-0 -1 4 4 ')
-    .attr('refX', 4)
-    .attr('refY', 0)
+    .attr('viewBox', '0 0 10 10 ')
+    .attr('refX', 9)
+    .attr('refY', 4)
     .attr('orient', 'auto')
-    .attr('markerWidth', 2)
-    .attr('markerHeight', 2)
+    .attr('markerWidth', 5)
+    .attr('markerHeight', 5)
     .attr('xoverflow', 'visible')
     .append('svg:path')
-    .attr('d', 'M 0,-1 L 2 ,0 L 0,2')
+    .attr('d', 'M-2,-2 L8,4 L-2,8 L4,4 L-2,-2')
     .attr('fill', '#999')
     .style('stroke', 'none');
 
@@ -50,27 +51,31 @@ function GraphVis(graph) {
       .nodes(graph.nodes)
       .links(graph.links)
       .start();
+
     link = svg.selectAll('.link').data(graph.links);
     node = svg.selectAll('.node').data(graph.nodes);
     link.enter().append('line')
       .attr('class', 'link')
+      .attr('stroke', '#999')
       .attr('marker-end', 'url(#arrowhead)')
       .attr('stroke-width', function(d){
-        return d.value*2;
+        return d.value*20 + "px";
       });
     link.exit().remove();
 
     node.enter().append('g');
     node.attr("class", "node").call(force.drag);
     node.append("circle")
-      .attr("r", 2)
+      .attr("r", 4)
+      .style("fill", function(d){ return color(d.id) });
     node.append("title")
       .text(function(d) {
         return d.id;
       });
     node.append("text")
       .attr("dy", -5)
-      .attr("font-size", "8px")
+     .attr("text-anchor", "middle")
+      .attr("font-size", "10px")
       .text(function(d) {
         return d.id;
       });
@@ -88,6 +93,7 @@ function GraphVis(graph) {
     label.text(function(d) {
       return d;
     });
+
   }
   force.on('tick', function() {
     link.attr('x1', function(d) {
