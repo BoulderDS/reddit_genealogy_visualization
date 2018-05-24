@@ -18,7 +18,7 @@ function GraphVis(graph) {
     svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
   }
   force = d3.layout.force()
-    .charge(-1000)
+    .charge(-600)
     .linkDistance(50)
     .gravity(0.05)
     .size([width, height]),
