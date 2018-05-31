@@ -19,10 +19,11 @@ function GraphVis(graph) {
     svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
   }
   force = d3.layout.force()
-    .charge(-300)
-    .linkDistance(150)
-    .gravity(0.0001)
+    .charge(-200)
+    .linkDistance(100)
+    .gravity(0.08)
     .size([width, height]),
+
     svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
@@ -114,35 +115,10 @@ function GraphVis(graph) {
         return d.target.y;
       });
     node.attr('cx', function(d) {
-      if(d.x < 0){
-        d.x  =500+d.x
         return d.x
-      }
-
-      if(d.x > 1500){
-        d.x = d.x - Math.floor(d.x/1000)*1000;
-        if(d.x < 0 ){
-          console.log(d.x)
-        }
-        return d.x;
-      } else{
-        return d.x
-      }
       })
       .attr('cy', function(d) {
-      if(d.y < 0){
-        d.y  =500+d.y
-        return d.y
-      }
-      if(d.y > 900) {
-        d.y = d.y - Math.floor(d.y/1000)*1000;
-        if(d.y < 0 || d.y > 1000){
-          console.log(d.y)
-        }
         return d.y;
-      } else {
-        return d.y;
-      }
       });
     node.attr("transform", function(d) {
       return "translate(" + d.x + "," +d.y+ ")";
