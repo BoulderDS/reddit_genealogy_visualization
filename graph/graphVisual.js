@@ -61,7 +61,10 @@ function GraphVis(graph) {
             .attr('stroke', '#000000')
             .attr('marker-end', 'url(#arrowhead)')
             .attr('stroke-width', function(d) {
-                return    "1px";
+                if(d.value*20 > 5){
+                    return 5;
+                }
+                return    d.value*20;
             });
         link.exit().remove();
 
