@@ -408,7 +408,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 x = -source.x0;
                 y = -source.y0;
                 x = x * scale + viewerWidth / 2;
-                y = y * scale + viewerHeight / 8;
+                y = y * scale + viewerHeight / 25;
                 d3.select('g').transition()
                     .duration(duration)
                     .attr("transform", "translate(" + x + "," + y + ")scale(" + scale + ")");
@@ -488,13 +488,13 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 }
             })
             $("#loadBtn").on("click", function(e) {
-                if (layer_sample >= 6) {
-                    alert('max limit reached!!')
+                if (layer_sample >= 5 ) {
+                    $('#loadAlert').removeClass('hide')
                     return
                 }
                 layer_sample += 1
                 var chosen_nodes = []
-                if( Array.from(init_random) > 0){
+                if( Array.from(init_random).length > 0){
                      chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample, Array.from(init_random));
                 } else {
                      chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample);
@@ -522,11 +522,13 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 _root = treeData
             })
             $("#randomBtn").on("click", function(e) {
-
+                $('#loadAlert').addClass('hide');
+                init_random = new Set()
+                layer_sample = 2
                 for (var i = 0; i < 5; i++) {
                     init_random.add(initial_samples[Math.floor((Math.random() * 100) % initial_samples.length)])
                 }
-                var chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, 2, Array.from(init_random))
+                var chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample, Array.from(init_random))
                 var prep = prep_data(chosen_nodes[0]);
                 var treeData = prep[0];
                 var temp_pair_nodes = prep[1];
@@ -580,7 +582,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
 
                 // Set widths between levels based on maxLabelLength.
                 nodes.forEach(function(d) {
-                    d.y = (d.depth * (maxLabelLength * 5)); //maxLabelLength * 10px
+                    d.y = (d.depth * (maxLabelLength * 8)); //maxLabelLength * 10px
                     // alternatively to keep a fixed scale one can set a fixed depth per level
                     // Normalize for fixed-depth by commenting out below line
                     // d.y = (d.depth * 500); //500px per level.
@@ -870,7 +872,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 .style('stroke', '#fff');
             // Define the root
             root = treeData;
-            root.x0 = viewerHeight / 5;
+            root.x0 = viewerHeight / 10;
             root.y0 = 0;
             //root.children.forEach(collapse);
             update(root, true, pairnodes);

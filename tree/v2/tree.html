@@ -69,6 +69,9 @@
   .twitter-typeahead{
   margin-top: 5px;
   }
+  .hide{
+    hidden:true;
+  }
   </style>
   <!-- <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
   <script type='text/javascript' src="http://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css"> </script>
@@ -107,6 +110,9 @@
     </nav>
   </div>
   <div id="tree-container">
+    <div id='loadAlert' class="hide alert alert-danger" role="alert"style="margin-bottom: 0px;">
+      max limit reached. couldn't load more, Please click random to continue
+    </div>
   </div>
 </body>
 </html>

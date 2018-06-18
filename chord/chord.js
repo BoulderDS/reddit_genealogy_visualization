@@ -14,6 +14,7 @@ var svg = d3.select("body").append("svg")
     .attr("height", outerRadius * 2)
     .append("g")
     .attr("transform", "translate(" + outerRadius + "," + outerRadius + ")");
+d3.select("body").on("click", fade(.9))
 var indexByName = d3.map(),
     nameByIndex = d3.map();
 var ischildView = false
@@ -52,8 +53,7 @@ d3.json("../data/chord.json", function(error, imports) {
         .data(chord.groups)
         .enter().append("g")
         .attr("class", "group")
-        .on("click", fade(.02))
-        .on("mouseout", fade(.90));
+        .on("click", fade(.02));
     g.append("path")
         .style("fill", function(d) {
             return fill(d.index);
@@ -94,85 +94,100 @@ d3.select(self.frameElement).style("height", outerRadius * 2 + "px");
 // Returns an event handler for fading a given chord group.
 function fade(opacity) {
     return function(d, i) {
-        console.log(opacity)
-        var targets = getImportsByName(nameByIndex.get(i))[0].imports
-        svg.selectAll("path.chord")
-            .filter(
-                function(d) {
-                    if (ischildView) {
-                        return d.target.index != i;
-                    } else {
-                        return d.source.index != i;
-                    }
-                }
-            )
-            .transition()
-            .style("stroke-opacity", opacity)
-            .style("fill-opacity", opacity);
-        svg.selectAll("text")
-            .filter(function(d) {
-                if (ischildView) {
-                    if (d.index == i) {
-                        return false
-                    }
-                    if (getImportsByName(nameByIndex.get(d.index))[0].imports.includes(nameByIndex.get(i))) {
-                        return false
-                    } else {
-                        return true
-                    }
-                } else {
-                    if (targets.includes(nameByIndex.get(d.index))) {
-                        return false
-                    }
-                    if (d.index != i) {
-                        return true
-                    }
-                }
-            })
-            .transition()
-            .style("opacity", opacity);
-        if (opacity == 0.02) {
-            svg.selectAll("text")
-                .filter(function(d) {
-                    if (d.index == i) {
-                        return true
-                    }
-                })
+        if (d == undefined || !(nameByIndex.get(i))) {
+            svg.selectAll("path.chord").transition()
+                .style("stroke-opacity", opacity)
+                .style("fill-opacity", opacity);
+            svg.selectAll(".group")
                 .transition()
-                .style("font-size", '20px');
+                .style("opacity", opacity);
+            svg.selectAll("text")
+                .transition()
+                .style("font-size", '9px')
+                .style("opacity", opacity);
+                
         } else {
+            var targets = getImportsByName(nameByIndex.get(i))[0].imports
+            svg.selectAll("path.chord")
+                .filter(
+                    function(d) {
+                        if (ischildView) {
+                            return d.target.index != i;
+                        } else {
+                            return d.source.index != i;
+                        }
+                    }
+                )
+                .transition()
+                .style("stroke-opacity", opacity)
+                .style("fill-opacity", opacity);
             svg.selectAll("text")
                 .filter(function(d) {
-                    if (d.index == i) {
-                        return true
+                    if (ischildView) {
+                        if (d.index == i) {
+                            return false
+                        }
+                        if (getImportsByName(nameByIndex.get(d.index))[0].imports.includes(nameByIndex.get(i))) {
+                            return false
+                        } else {
+                            return true
+                        }
+                    } else {
+                        if (targets.includes(nameByIndex.get(d.index))) {
+                            return false
+                        }
+                        if (d.index != i) {
+                            return true
+                        }
                     }
                 })
                 .transition()
-                .style("font-size", '8px');
-        }
-        svg.selectAll(".group")
-            .filter(function(d) {
-                if (ischildView) {
-                    if (d.index == i) {
-                        return false
-                    }
-                    if (getImportsByName(nameByIndex.get(d.index))[0].imports.includes(nameByIndex.get(i))) {
-                        return false
+                .style("opacity", opacity);
+            if (opacity == 0.02) {
+                svg.selectAll("text")
+                    .filter(function(d) {
+                        if (d.index == i) {
+                            return true
+                        }
+                    })
+                    .transition()
+                    .style("font-size", '20px');
+            } else {
+                svg.selectAll("text")
+                    .filter(function(d) {
+                        if (d.index == i) {
+                            return true
+                        }
+                    })
+                    .transition()
+                    .style("font-size", '9px');
+            }
+            svg.selectAll(".group")
+                .filter(function(d) {
+                    if (ischildView) {
+                        if (d.index == i) {
+                            return false
+                        }
+                        if (getImportsByName(nameByIndex.get(d.index))[0].imports.includes(nameByIndex.get(i))) {
+                            return false
+                        } else {
+                            return true
+                        }
                     } else {
-                        return true
-                    }
-                } else {
-                    if (targets.includes(nameByIndex.get(d.index))) {
-                        return false
-                    }
-                    if (d.index != i) {
-                        return true
-                    }
+                        if (targets.includes(nameByIndex.get(d.index))) {
+                            return false
+                        }
+                        if (d.index != i) {
+                            return true
+                        }
 
-                }
-            })
-            .transition()
-            .style("opacity", opacity);
+                    }
+                })
+                .transition()
+                .style("opacity", opacity);
+            d3.event.stopPropagation();
+        }
+
     };
 }
 
