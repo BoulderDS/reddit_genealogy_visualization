@@ -27,17 +27,6 @@ var random_vals = [, 'AskReddit', 'pics', 'funny', 'Music', 'leagueoflegends',
 ]
 
 function extract_select2_data(node, leaves, index) {
-    // if (node.children) {
-    //     for (var i = 0; i < node.children.length; i++) {
-    //         index = extract_select2_data(node.children[i], leaves, index)[0];
-    //     }
-    // } else {
-    //     leaves.push({
-    //         id: ++index,
-    //         text: node.id
-    //     });
-    // }
-    // return [index, leaves];
     return Array.from(Object.keys(graph))
 }
 var substringMatcher = function(strs) {
@@ -55,21 +44,21 @@ var substringMatcher = function(strs) {
 };
 
 function searchTree(obj, search, path) {
-    if (obj.id === search) { //if search is found return, add the object to the path and return it
+    if (obj.id === search) { 
         path.push(obj);
         return path;
-    } else if (obj.children || obj._children) { //if children are collapsed d3 object will have them instantiated as _children
+    } else if (obj.children || obj._children) { 
         var children = (obj.children) ? obj.children : obj._children;
         for (var i = 0; i < children.length; i++) {
-            path.push(obj); // we assume this path is the right one
+            path.push(obj); 
             var found = searchTree(children[i], search, path);
-            if (found) { // we were right, this should return the bubbled-up path from the first if statement
+            if (found) { 
                 return found;
-            } else { //we were wrong, remove this parent from the path and continue iterating
+            } else { 
                 path.pop();
             }
         }
-    } else { //not the right object, return false so it will continue to iterate in the loop
+    } else { 
         return false;
     }
 }
@@ -83,10 +72,10 @@ var init_random = new Set();
 mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
     for (var i = 0; i < entireTree.length; i++) {
         if (entireTree[i]['id'] in graph) {
-            graph[entireTree[i]['id']][entireTree[i]['parent']] = parseInt(entireTree[i]['score'], 10)
+            graph[entireTree[i]['id']][entireTree[i]['parent']] = parseFloat(entireTree[i]['score'], 10)
         } else {
             graph[entireTree[i]['id']] = {}
-            graph[entireTree[i]['id']][entireTree[i]['parent']] = parseInt(entireTree[i]['score'], 10)
+            graph[entireTree[i]['id']][entireTree[i]['parent']] = parseFloat(entireTree[i]['score'], 10)
         }
     }
     layers = d3.csv("../../data/layer_year.csv", function(error, layerData) {
@@ -172,12 +161,10 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                         var samples = new Set()
                         if (candidates.length < layer_sample - count) {
                             for (var x = 0; x < candidates.length; x++) {
-                                //var rand = Math.floor(Math.random() * candidates.length);
                                 samples.add(candidates[x]['subreddit'])
                             }
                         } else {
                             for (var x = 0; x < (layer_sample - count); x++) {
-                                //var rand = Math.floor(Math.random() * candidates.length);
                                 samples.add(candidates[x]['subreddit'])
                             }
                         }
@@ -259,7 +246,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 console.log('multiparentnodes : ' + multiparentnodes.length)
                 tree_nodes = stratify(tree_nodes)
                     .sort(function(a, b) {
-                        return a.id.localeCompare(b.id);
+                        return post_to_size[b.id] - post_to_size[a.id];
                     });
                 return [tree_nodes, multiparentnodes];
             }
@@ -275,10 +262,6 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
             var selectData = treeData
             var autocomplete = []
             autocomplete = extract_select2_data(selectData, [], 0);
-            // autocomplete = []
-            // for (i in select2_data) {
-            //     autocomplete.push(select2_data[i]['text'])
-            // }
             $('.typeahead').typeahead({
                 hint: true,
                 highlight: true,
@@ -289,23 +272,17 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
             });
             var totalNodes = 0;
             var maxLabelLength = 0;
-            // variables for drag/drop
             var selectedNode = null;
             var draggingNode = null;
-            // panning variables
             var panSpeed = 200;
-            var panBoundary = 20; // Within 20px from edges will pan when dragging.
-            // Misc. variables
+            var panBoundary = 20; 
             var i = 0;
             var duration = 750;
             var root;
-            // size of the diagram
             var viewerWidth = $(document).width();
             var viewerHeight = $(document).height();
             var tree = d3.layout.tree()
                 .size([viewerHeight, viewerWidth]);
-            // define a d3 diagonal
-            //projection for use by the node paths later on.
             var diagonal = d3.svg.diagonal()
                 .projection(function(d) {
                     return [d.x, d.y];
@@ -314,7 +291,6 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 .projection(function(d) {
                     return [d.x, d.y];
                 });
-            // A recursive helper function for performing some setup by walking through all nodes
             function visit(parent, visitFn, childrenFn) {
                 if (!parent) return;
                 visitFn(parent);
@@ -326,35 +302,73 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                     }
                 }
             }
-            // Call visit function to establish maxLabelLength
             visit(treeData, function(d) {
                 totalNodes++;
                 maxLabelLength = Math.max(d.id.length, maxLabelLength);
             }, function(d) {
                 return d.children && d.children.length > 0 ? d.children : null;
             });
-            // sort the tree according to the node names
-            // function sortTree() {
-            //     tree.sort(function(a, b) {
-            //         return b.id.toLowerCase() < a.id.toLowerCase() ? 1 : -1;
-            //     });
-            // }
-            // // Sort the tree initially incase the JSON isn't in a sorted order.
-            // sortTree();
-            // TODO: Pan function, can be better implemented.
-            // Define the zoom function for the zoomable tree
             function zoom() {
                 svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
             }
-            // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
             var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
-            // define the baseSvg, attaching a class for styling and the zoomListener
             var baseSvg = d3.select("#tree-container").append("svg")
                 .attr("width", viewerWidth)
                 .attr("height", viewerHeight)
                 .attr("class", "overlay")
                 .call(zoomListener);
-            // Helper functions for collapsing and expanding nodes.
+
+            var svgGroup = baseSvg.append("g");
+            svgGroup.append('defs').append('marker')
+                .attr('id', 'arrowhead')
+                .attr('viewBox', '0 -5 10 10 ')
+                .attr('markerUnits','userSpaceOnUse')
+                .attr('refX', 15)
+                .attr('refY', 0)
+                .attr('orient', 'auto')
+                .attr('markerWidth', 13)
+                .attr('markerHeight', 13)
+                .append('svg:path')
+                .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
+                .attr('fill', '#000000')
+                .style('stroke-width', '2px')
+                .style('stroke', 'none')
+            svgGroup.append('defs').append('marker')
+                .attr('id', 'reversearrowhead')
+                .attr('viewBox', '0 -2 5 5 ')
+                .attr('markerUnits','userSpaceOnUse')
+                .attr('refX', 0)
+                .attr('refY', 0)
+                .attr('orient', '')
+                .attr('markerWidth', 13)
+                .attr('markerHeight', 13)
+                .append('svg:path')
+                .attr('d', 'M 0,-2 L 5 ,0 L 0,2')
+                .attr('fill', '#000000')
+                .style('stroke-width', '2px')
+                .style('stroke', 'none');
+
+            var defs = svgGroup.append("defs");
+            defs.append("marker")
+                .attr("id", "triangle-start")
+                .attr("viewBox", "0 0 10 10")
+                .attr('markerUnits','userSpaceOnUse')
+                .attr("refX", 15)
+                .attr("refY", 5)
+                .attr("markerWidth", 13)
+                .attr("markerHeight",13)
+                .attr("orient", "auto")
+                .append("path")
+                .attr("d", "M 0 0 L 10 5 L 0 10 z");
+
+            
+            root = treeData;
+            root.x0 = viewerHeight / 10;
+            root.y0 = 0;
+            update(root, true, pairnodes);
+            centerNode(root);
+            _root = root
+
             function collapse(d) {
                 if (d.children) {
                     d._children = d.children;
@@ -408,7 +422,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 x = -source.x0;
                 y = -source.y0;
                 x = x * scale + viewerWidth / 2;
-                y = y * scale + viewerHeight / 25;
+                y = y * scale;
                 d3.select('g').transition()
                     .duration(duration)
                     .attr("transform", "translate(" + x + "," + y + ")scale(" + scale + ")");
@@ -487,17 +501,323 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                     }
                 }
             })
-            $("#loadBtn").on("click", function(e) {
-                if (layer_sample >= 5 ) {
+
+
+            function update(source, resize, multipairnodes) {
+                var levelWidth = [1];
+                var childCount = function(level, n) {
+                    if (n.children && n.children.length > 0) {
+                        if (levelWidth.length <= level + 1) levelWidth.push(0);
+                        levelWidth[level + 1] += n.children.length;
+                        n.children.forEach(function(d) {
+                            childCount(level + 1, d);
+                        });
+                    }
+                };
+                childCount(0, root);
+                if (multipairnodes == undefined) {
+                    multipairnodes = pairnodes
+                } else {
+                    pairnodes = multipairnodes
+                }
+                var multipair = multipairnodes
+                multiParents = []
+                for (var x = 0; x < multipair.length; x++) {
+                    parent_1 = tree.nodes(root).filter(function(d) {
+                        return d['id'] == multipair[x]['parent']
+                    });
+                    child_1 = tree.nodes(root).filter(function(d) {
+                        return d['id'] == multipair[x]['id']
+                    });
+                    if (parent_1 != undefined && parent_1.length > 0 &&
+                        child_1 != undefined && child_1.length) {
+                        if (parent_1[0]._children != undefined ||
+                            parent_1[0].depth == child_1[0].depth) {
+                            continue
+                        } else {
+                            multiParents.push({
+                                parent: parent_1[0],
+                                child: child_1[0]
+                            });
+                        }
+                    }
+                }
+
+                //var newHeight = d3.max(levelWidth) * 25;
+                var newWidth = d3.max(levelWidth) * 3 * maxLabelLength;
+                var newHeight = 50 * d3.max(levelWidth);
+                // 25 pixels per line
+                if (resize && viewerHeight < newHeight && viewerWidth < newWidth) {
+                    tree.size([newWidth, newHeight]);
+                }
+                // Compute the new tree layout.
+                var nodes = tree.nodes(root).reverse(),
+                    links = tree.links(nodes);
+
+                // Set widths between levels based on maxLabelLength.
+                nodes.forEach(function(d) {
+                    d.y = (d.depth * (maxLabelLength * 10)); //maxLabelLength * 10px
+                });
+                d3.selectAll('path.link1').remove()
+                var additionalParentLink = svgGroup.selectAll("path.additionalParentLink")
+                    .data(multiParents);
+
+                additionalParentLink.enter().insert("path", "g")
+                    .attr("class", "link1")
+                    .attr("d", function(d) {
+                        var oTarget = {
+                            x: d.child.x,
+                            y: d.child.y
+                        };
+                        var oSource = {
+                            x: d.parent.x,
+                            y: d.parent.y
+                        };
+                        //return [d.x, d.y / 180 * Math.PI];
+                        return linkRadial({
+                            source: oSource,
+                            target: oTarget
+                        });
+                    })
+                    .style('stroke-width', function(d) {
+                        if (d.child.id == 'root') {
+                            return '1px';
+                        }
+                        if (graph[d.child.id][d.parent.id] * 20 > 5) {
+                            return '4px';
+                        }
+                        return graph[d.child.id][d.parent.id] * 20;
+                    })
+                    .attr('marker-end', 'url(#triangle-start)');
+                    
+                node = svgGroup.selectAll("g.node")
+                    .data(nodes, function(d) {
+                        return d.id || (d.id = ++i);
+                    });
+
+
+                // Enter any new nodes at the parent's previous position.
+                var nodeEnter = node.enter().append("g")
+                    .attr("class", "node")
+                    .on('click', click);
+                nodeEnter.append("circle")
+                    .attr('class', 'nodeCircle')
+                    .attr("r", 0)
+                    .style("fill", function(d) {
+                        if (d.class === "found") {
+                            return "#ff4136"; //red
+                        }
+                        return d._children ? "#000000" : "#049ae5";
+                    })
+                    .style("stroke", function(d) {
+                        if (d.id == 'root') {
+                            return "#fff";
+                        }
+                        if (d.class === "found") {
+                            return "#ff4136"; //red
+                        }
+                    })
+                    .style("fill-opacity", function(d) {
+                        if (d.id == 'root') {
+                            return 0;
+                        } else {
+                            return 1;
+                        }
+                    });
+                nodeEnter.append("text")
+                    .attr("y", function(d) {
+                        return -10;
+                    })
+                    .attr("x", function(d) {
+                        return 0;
+                    })
+                    .attr('class', 'nodeText')
+                    .attr("text-anchor", function(d) {
+                        return "middle";
+                    })
+                    .attr("transform", "rotate(10)")
+                    .text(function(d) {
+                        return d.id;
+                    })
+                    .style("fill", "#000000")
+                    .style("fill-opacity", 0);
+                // phantom node to give us mouseover in a radius around it
+                nodeEnter.append("circle")
+                    .attr('class', 'ghostCircle')
+                    .attr("r", 50)
+                    .attr("opacity", 0.2) // change this to zero to hide the target area
+                    .style("fill", "red")
+                    .attr('pointer-events', 'mouseover')
+                    .on("mouseover", function(node) {
+                        overCircle(node);
+                    })
+                    .on("mouseout", function(node) {
+                        outCircle(node);
+                    });
+                // Update the text to reflect whether node has children or not.
+                node.select('text')
+                    .attr("x", function(d) {
+                        return 0;
+                    })
+                    .attr("text-anchor", function(d) {
+                        return "middle";
+                    })
+                    .attr("transform", "rotate(10)")
+                    .text(function(d) {
+                        return d.id;
+                    })
+                    .style("fill", "#000000");
+                // Change the circle fill depending on whether it has children and is collapsed
+                node.select("circle.nodeCircle")
+                    .attr("r", function(d) {
+                        if (d.id == undefined) {
+                            console.log(d);
+                            return 8;
+                        }
+                        if (!((typeof d.id === 'string' || d.id instanceof String))) {
+                            console.log(d)
+                        }
+                        if ((typeof d.id === 'string' || d.id instanceof String) &&
+                            d.id.startsWith('load more ', 0)) {
+                            return 15;
+                        } else {
+                            return post_to_size[d.id];
+                        }
+                    })
+                    .style("fill", function(d) {
+                        if (d.id == 'root') {
+                            return "#ff4136";
+                        }
+                        if (d.class === "found") {
+                            return "#ff4136"; //red
+                        }
+                        return d._children ? "#000000" : "#049ae5";
+                    })
+                    .style("fill-opacity", function(d) {
+                        if (d.id == 'root') {
+                            return 0;
+                        } else {
+                            return 1;
+                        }
+                    });
+                // Transition nodes to their new position.
+                var nodeUpdate = node.transition()
+                    .duration(duration)
+                    .attr("transform", function(d) {
+                        return "translate(" + d.x + "," + d.y + ")";
+                    });
+                // Fade the text in
+                nodeUpdate.select("text")
+                    .style("fill-opacity", function(d) {
+                        if (d.id == 'root') {
+                            return 0;
+                        } else {
+                            return 1;
+                        }
+                    });
+                // Transition exiting nodes to the parent's new position.
+                var nodeExit = node.exit().transition()
+                    .duration(duration)
+                    .attr("transform", function(d) {
+                        if (d.source) {
+                            return "translate(" + d.source.x + "," + d.source.y + ")";
+                        } else {
+                            return "translate(" + d.x + "," + d.y + ")";
+                        }
+                    })
+                    .remove();
+                nodeExit.select("circle")
+                    .attr("r", 0);
+                nodeExit.select("text")
+                    .style("fill-opacity", 0);
+                // Update the links…
+                var link = svgGroup.selectAll("path.link")
+                    .data(links, function(d) {
+                        return d.target.id;
+                    });
+                // Enter any new links at the parent's previous position.
+                link.enter().insert("path", "g")
+                    .attr("class", "link")
+                    .attr("d", function(d) {
+                        var o = {
+                            x: d.source.x,
+                            y: d.source.y
+                        };
+
+
+                        return diagonal({
+                            source: o,
+                            target: o
+                        });
+                    });
+                // Transition links to their new position.
+                link.transition()
+                    .duration(duration)
+                    .attr("d", diagonal)
+                    .style("stroke", function(d) {
+                        if (d.target.class === "found") {
+                            return "#ff4136";
+                        }
+                    })
+                    .style("opacity", function(d) {
+                        if (d.source.id == 'root') {
+                            return 0;
+                        } else {
+                            return 1;
+                        }
+                    })
+                    .style('stroke-width', function(d) {
+                        if (d.source.id == 'root') {
+                            return '1px';
+                        }
+                        if (graph[d.target.id][d.source.id] * 20 > 5) {
+                            return '4px';
+                        }
+                        return graph[d.target.id][d.source.id] * 20;
+                    })
+                    .attr('marker-end', function(d) {
+                        return 'url(#arrowhead)';
+                    });
+
+                // Transition exiting nodes to the parent's new position.
+                link.exit().transition()
+                    .duration(duration)
+                    .attr("d", function(d) {
+                        var o = {
+                            x: d.source.x,
+                            y: d.source.y
+                        };
+                        return diagonal({
+                            source: o,
+                            target: o
+                        });
+                    })
+                    .remove();
+
+                // Stash the old positions for transition.
+                nodes.forEach(function(d) {
+                    d.x0 = d.x;
+                    d.y0 = d.y;
+                });
+
+
+            }
+
+
+
+
+
+                        $("#loadBtn").on("click", function(e) {
+                if (layer_sample >= 5) {
                     $('#loadAlert').removeClass('hide')
                     return
                 }
                 layer_sample += 1
                 var chosen_nodes = []
-                if( Array.from(init_random).length > 0){
-                     chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample, Array.from(init_random));
+                if (Array.from(init_random).length > 0) {
+                    chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample, Array.from(init_random));
                 } else {
-                     chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample);
+                    chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample);
                 }
                 var prep = prep_data(chosen_nodes[0]);
                 var treeData = prep[0];
@@ -554,354 +874,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
             })
 
 
-            function update(source, resize, multipairnodes) {
-                // Compute the new height, function counts total children of root node and sets tree height accordingly.
-                // This prevents the layout looking squashed when new nodes are made visible or looking sparse when nodes are removed
-                // This makes the layout more consistent.
-                var levelWidth = [1];
-                var childCount = function(level, n) {
-                    if (n.children && n.children.length > 0) {
-                        if (levelWidth.length <= level + 1) levelWidth.push(0);
-                        levelWidth[level + 1] += n.children.length;
-                        n.children.forEach(function(d) {
-                            childCount(level + 1, d);
-                        });
-                    }
-                };
-                childCount(0, root);
-                //var newHeight = d3.max(levelWidth) * 25;
-                var newWidth = d3.max(levelWidth) * 3 * maxLabelLength;
-                var newHeight = 50 * d3.max(levelWidth);
-                // 25 pixels per line
-                if (resize && viewerHeight < newHeight && viewerWidth < newWidth) {
-                    tree.size([newWidth, newHeight]);
-                }
-                // Compute the new tree layout.
-                var nodes = tree.nodes(root).reverse(),
-                    links = tree.links(nodes);
-
-                // Set widths between levels based on maxLabelLength.
-                nodes.forEach(function(d) {
-                    d.y = (d.depth * (maxLabelLength * 8)); //maxLabelLength * 10px
-                    // alternatively to keep a fixed scale one can set a fixed depth per level
-                    // Normalize for fixed-depth by commenting out below line
-                    // d.y = (d.depth * 500); //500px per level.
-                });
-                // Update the nodes…
-                node = svgGroup.selectAll("g.node")
-                    .data(nodes, function(d) {
-                        return d.id || (d.id = ++i);
-                    });
-                // Enter any new nodes at the parent's previous position.
-                var nodeEnter = node.enter().append("g")
-                    .attr("class", "node")
-                    .on('click', click);
-                // .attr("transform", function(d) {
-                //     return "translate(" + source.y0 + "," + source.x0 + ")";
-                // })
-                nodeEnter.append("circle")
-                    .attr('class', 'nodeCircle')
-                    .attr("r", 0)
-                    .style("fill", function(d) {
-                        if (d.class === "found") {
-                            return "#ff4136"; //red
-                        }
-                        return d._children ? "#fff" : "#049ae5";
-                    })
-                    .style("stroke", function(d) {
-                        if (d.id == 'root') {
-                            return "#000000";
-                        }
-                        if (d.class === "found") {
-                            return "#ff4136"; //red
-                        }
-                    })
-                    .style("fill-opacity", function(d) {
-                        if (d.id == 'root') {
-                            return 0;
-                        } else {
-                            return 1;
-                        }
-                    });
-                nodeEnter.append("text")
-                    .attr("y", function(d) {
-                        return -10;
-                    })
-                    .attr("x", function(d) {
-                        return 0;
-                    })
-                    .attr('class', 'nodeText')
-                    .attr("text-anchor", function(d) {
-                        return "middle";
-                    })
-                    .attr("transform", "rotate(10)")
-                    .text(function(d) {
-                        return d.id;
-                    })
-                    .style("fill", "#fff")
-                    .style("fill-opacity", 0);
-                // phantom node to give us mouseover in a radius around it
-                nodeEnter.append("circle")
-                    .attr('class', 'ghostCircle')
-                    .attr("r", 50)
-                    .attr("opacity", 0.2) // change this to zero to hide the target area
-                    .style("fill", "red")
-                    .attr('pointer-events', 'mouseover')
-                    .on("mouseover", function(node) {
-                        overCircle(node);
-                    })
-                    .on("mouseout", function(node) {
-                        outCircle(node);
-                    });
-                // Update the text to reflect whether node has children or not.
-                node.select('text')
-                    .attr("x", function(d) {
-                        return 0;
-                    })
-                    .attr("text-anchor", function(d) {
-                        return "middle";
-                    })
-                    .attr("transform", "rotate(10)")
-                    .text(function(d) {
-                        return d.id;
-                    })
-                    .style("fill", "#fff");
-                // Change the circle fill depending on whether it has children and is collapsed
-                node.select("circle.nodeCircle")
-                    .attr("r", function(d) {
-                        if (d.id == undefined) {
-                            console.log(d);
-                            return 8;
-                        }
-                        if (!((typeof d.id === 'string' || d.id instanceof String))) {
-                            console.log(d)
-                        }
-                        if ((typeof d.id === 'string' || d.id instanceof String) &&
-                            d.id.startsWith('load more ', 0)) {
-                            return 15;
-                        } else {
-                            return 8;
-                        }
-                    })
-                    .style("fill", function(d) {
-                        if (d.id == 'root') {
-                            return "#ff4136";
-                        }
-                        if (d.class === "found") {
-                            return "#ff4136"; //red
-                        }
-                        return d._children ? "#fff" : "#049ae5";
-                    })
-                    .style("fill-opacity", function(d) {
-                        if (d.id == 'root') {
-                            return 0;
-                        } else {
-                            return 1;
-                        }
-                    });
-                // Transition nodes to their new position.
-                var nodeUpdate = node.transition()
-                    .duration(duration)
-                    .attr("transform", function(d) {
-                        return "translate(" + d.x + "," + d.y + ")";
-                    });
-                // Fade the text in
-                nodeUpdate.select("text")
-                    .style("fill-opacity", function(d) {
-                        if (d.id == 'root') {
-                            return 0;
-                        } else {
-                            return 1;
-                        }
-                    });
-                // Transition exiting nodes to the parent's new position.
-                var nodeExit = node.exit().transition()
-                    .duration(duration)
-                    .attr("transform", function(d) {
-                        if (d.source) {
-                            return "translate(" + d.source.x + "," + d.source.y + ")";
-                        } else {
-                            return "translate(" + d.x + "," + d.y + ")";
-                        }
-                    })
-                    .remove();
-                d3.selectAll('path.additionalParentLink').remove()
-                nodeExit.select("circle")
-                    .attr("r", 0);
-                nodeExit.select("text")
-                    .style("fill-opacity", 0);
-                // Update the links…
-                var link = svgGroup.selectAll("path.link")
-                    .data(links, function(d) {
-                        return d.target.id;
-                    });
-                // Enter any new links at the parent's previous position.
-                link.enter().insert("path", "g")
-                    .attr("class", "link")
-                    .attr("d", function(d) {
-                        var o = {
-                            x: d.source.x,
-                            y: d.source.y
-                        };
-
-
-                        return diagonal({
-                            source: o,
-                            target: o
-                        });
-                    });
-                // Transition links to their new position.
-                link.transition()
-                    .duration(duration)
-                    .attr("d", diagonal)
-                    .style("stroke", function(d) {
-                        if (d.target.class === "found") {
-                            return "#ff4136";
-                        }
-                    })
-                    .style("opacity", function(d) {
-                        if (d.source.id == 'root') {
-                            return 0;
-                        } else {
-                            return 1;
-                        }
-                    });
-                // Transition exiting nodes to the parent's new position.
-                link.exit().transition()
-                    .duration(duration)
-                    .attr("d", function(d) {
-                        var o = {
-                            x: d.source.x,
-                            y: d.source.y
-                        };
-                        return diagonal({
-                            source: o,
-                            target: o
-                        });
-                    })
-                    .remove();
-                // Stash the old positions for transition.
-                nodes.forEach(function(d) {
-                    d.x0 = d.x;
-                    d.y0 = d.y;
-                });
-
-                var curr_nodes = tree.nodes(root)
-                    // multipairnodes = [
-                    //     {id:'reddit.com', parent:'AndroidPay'},
-                    //     {id:'stevenuniverse',parent:'Android'}
-                    // ]
-                if (multipairnodes == undefined) {
-                    multipairnodes = pairnodes
-                } else {
-                    pairnodes = multipairnodes
-                }
-                var multipair = multipairnodes
-                    // if (source.children && source.children.length > 0) {
-                    //     source_children = []
-                    //     for (var l = 0; l < curr_nodes.length; l++) {
-                    //         source_children.push(curr_nodes[l].id)
-                    //     }
-                    //     for (var l = 0; l < multipairnodes.length; l++) {
-                    //         multiPair = multipairnodes[l]
-                    //         if (source_children.includes(multiPair.id)) {
-                    //             multipair.push(multiPair)
-                    //         }
-                    //     }
-                    // }
-
-                multiParents = []
-                for (var x = 0; x < multipair.length; x++) {
-                    parent_1 = tree.nodes(root).filter(function(d) {
-                        return d['id'] == multipair[x]['parent']
-                    });
-                    child_1 = tree.nodes(root).filter(function(d) {
-                        return d['id'] == multipair[x]['id']
-                    });
-                    if (parent_1 != undefined && parent_1.length > 0 &&
-                        child_1 != undefined && child_1.length) {
-                        if (parent_1[0]._children != undefined ||
-                            parent_1[0].depth == child_1[0].depth) {
-                            continue
-                        } else {
-                            multiParents.push({
-                                parent: parent_1[0],
-                                child: child_1[0]
-                            });
-                        }
-                    }
-                }
-                multiParents.forEach(function(multiPair) {
-                    svgGroup.append("path", "g")
-                        .attr("class", "additionalParentLink")
-                        .attr("d", function() {
-                            var oTarget = {
-                                x: multiPair.parent.x0,
-                                y: multiPair.parent.y0
-                            };
-                            var oSource = {
-                                x: multiPair.child.x0,
-                                y: multiPair.child.y0
-                            };
-                            //return [d.x, d.y / 180 * Math.PI];
-                            return linkRadial({
-                                source: oSource,
-                                target: oTarget
-                            });
-                        });
-                });
-
-            }
-
-
-
-            var svgGroup = baseSvg.append("g");
-            svgGroup.append('defs').append('marker')
-                .attr('id', 'arrowhead')
-                .attr('viewBox', '0 0 10 10 ')
-                .attr('refX', 9)
-                .attr('refY', 4)
-                .attr('orient', 'auto')
-                .attr('markerWidth', 5)
-                .attr('markerHeight', 5)
-                .attr('xoverflow', 'visible')
-                .append('svg:path')
-                .attr('d', 'M-15,-15 L8,4 L-15,15 L6,6 L-15,-15')
-                .attr('fill', '#fff')
-                .style('stroke-width', '2px')
-                .style('stroke', '#fff');
-            // Define the root
-            root = treeData;
-            root.x0 = viewerHeight / 10;
-            root.y0 = 0;
-            //root.children.forEach(collapse);
-            update(root, true, pairnodes);
-            centerNode(root);
-            _root = root
-
         });
     });
 });
 
-function searchNode() {
-    //find the node
-    var selectedVal = document.getElementById('search').value;
-    var node = d3.selectAll("g.node");
-    if (selectedVal == "none") {
-        node.style("stroke", "white").style("stroke-width", "1");
-    } else {
-        var selected = node.filter(function(d, i) {
-            return d.id != selectedVal;
-        });
-        selected.style("opacity", "0");
-        var link = d3.selectAll("path.link")
-        link.style("opacity", "0");
-        // d3.selectAll("g.node, path.link").transition()
-        // .duration(5000)
-        // .style("opacity", 1);
-    }
-}
-
-function resetNode() {
-    d3.selectAll("g.node, path.link").style("opacity", 1);
-}

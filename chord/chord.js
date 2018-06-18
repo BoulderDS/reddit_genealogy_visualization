@@ -160,7 +160,7 @@ function fade(opacity) {
                         }
                     })
                     .transition()
-                    .style("font-size", '9px');
+                    .style("font-size", '12px');
             }
             svg.selectAll(".group")
                 .filter(function(d) {

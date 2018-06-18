@@ -8,7 +8,7 @@
   cursor: pointer;
   }
   .overlay{
-  background-color:#000000;
+  background-color:#fff;
   }
   
   .node circle {
@@ -22,10 +22,15 @@
   font-family:sans-serif;
   }
   
+  .link1{
+  fill: none;
+  stroke:#4c4c4c;
+  stroke-width: 4px;  
+  }
   .link {
   fill: none;
-  stroke: #ccc;
-  stroke-width: 1.5px;
+  stroke: #4c4c4c;
+  stroke-width: 4px;
   }
 
   .additionalParentLink{
@@ -61,7 +66,7 @@
   width: 100%;
   }
   .nodeText{
-  color: #fff;
+  color: #000000;
   }
   .pull-right {
   float: right;
@@ -70,6 +75,7 @@
   margin-top: 5px;
   }
   .hide{
+
     hidden:true;
   }
   </style>
@@ -89,14 +95,8 @@
 </head>
 <body>
   <script src="dndTree.js"></script>
-  <!-- <div class="ui-widget">
-    <input id="search">
-    <button type="button" onclick="searchNode()">Search</button>
-    <button type="reset" onclick="resetNode()">Reset</button>
-    
-  </div> -->
   <div class="wrapper">
-    <nav class="">
+    <nav class="navbar navbar-inverse" style='margin-bottom: 0px'>
       <div class="container">
         <a class="navbar-brand text-uppercase" href="../../index.html">Reddit Genology</a>
         <div class="nav navbar-nav navbar-right">
@@ -110,7 +110,8 @@
     </nav>
   </div>
   <div id="tree-container">
-    <div id='loadAlert' class="hide alert alert-danger" role="alert"style="margin-bottom: 0px;">
+    <div id='loadAlert' class="hide alert alert-danger" role="alert"style="margin-bottom: 0px;
+    position: relative;">
       max limit reached. couldn't load more, Please click random to continue
     </div>
   </div>
