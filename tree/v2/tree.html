@@ -39,6 +39,16 @@
   stroke-width: 1.5px;
 
   }
+  div.tooltip { 
+    position: absolute;     
+    text-align: center;     
+    padding: 2px;       
+    font: 12px sans-serif;    
+    background: lightsteelblue; 
+    border: 0px;    
+    border-radius: 8px;     
+    pointer-events: none;     
+  }
   .found {
   stroke: #ff4136;
   }
@@ -78,6 +88,12 @@
 
     hidden:true;
   }
+  .center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 20%; 
+  }
   </style>
   <!-- <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
   <script type='text/javascript' src="http://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css"> </script>
@@ -113,6 +129,9 @@
     <div id='loadAlert' class="hide alert alert-danger" role="alert"style="margin-bottom: 0px;
     position: relative;">
       max limit reached. couldn't load more, Please click random to continue
+    </div>
+    <div class="center">
+      <img src="../../data/load.gif" alt="Loading">
     </div>
   </div>
 </body>
