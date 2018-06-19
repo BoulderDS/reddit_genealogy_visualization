@@ -1,3 +1,13 @@
+Array.prototype.removeValue = function(name, value) {
+    var array = $.map(this, function(v, i) {
+        return v[name] === value ? null : v;
+    });
+    this.length = 0; //clear original array
+    this.push.apply(this, array); //push all elements except the one we want to delete
+}
+
+//countries.results.removeValue('name', 'Albania');
+
 var select2_data = [];
 var _root = []
 var stratify = d3.stratify()
@@ -7,7 +17,7 @@ var stratify = d3.stratify()
 var random_vals = [, 'AskReddit', 'pics', 'funny', 'Music', 'leagueoflegends',
     'todayilearned', 'worldnews', 'Bitcoin', 'tf2', 'videos', 'trees',
     'AdviceAnimals', 'anime', 'Android', 'DotA2', 'Overwatch',
-    'GlobalOffensive', 'Minecraft', 'gonewild', 'WTF', 'news', 'BabyBumps',
+    'GlobalOffensive', 'gonewild', 'WTF', 'news', 'BabyBumps',
     'GrandTheftAutoV', 'Celebs', 'magicTCG', 'mylittlepony',
     'pokemontrades', 'firstworldproblems', 'soccer', 'guns', 'circlejerk',
     'hearthstone', 'atheism', 'electronic_cigarette', 'aww', 'reactiongifs',
@@ -44,32 +54,33 @@ var substringMatcher = function(strs) {
 };
 
 function searchTree(obj, search, path) {
-    if (obj.id === search) { 
+    if (obj.id === search) {
         path.push(obj);
         return path;
-    } else if (obj.children || obj._children) { 
+    } else if (obj.children || obj._children) {
         var children = (obj.children) ? obj.children : obj._children;
         for (var i = 0; i < children.length; i++) {
-            path.push(obj); 
+            path.push(obj);
             var found = searchTree(children[i], search, path);
-            if (found) { 
+            if (found) {
                 return found;
-            } else { 
+            } else {
                 path.pop();
             }
         }
-    } else { 
+    } else {
         return false;
     }
 }
 
-var layer_sample = 2
+var layer_sample = 5
 var graph = {};
 var layer_dict = {};
 var reverse_dict = {};
 var init_random = new Set();
 
-mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
+mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
+    console.log(entireTree.length)
     for (var i = 0; i < entireTree.length; i++) {
         if (entireTree[i]['id'] in graph) {
             graph[entireTree[i]['id']][entireTree[i]['parent']] = parseFloat(entireTree[i]['score'], 10)
@@ -93,6 +104,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
             reverse_dict[v].push(k)
         }
         post_size = d3.csv("../../data/size.csv", function(error, post_size) {
+
             var post_to_size = {}
             for (var i = 0; i < post_size.length; i++) {
                 post_to_size[post_size[i]['subreddit']] = parseInt(post_size[i]['size'])
@@ -136,6 +148,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                     }
                     if (candidates.length == 0)
                         continue
+                        //console.log(candidates.length, y_val)
                     sortByKey(candidates, 'postSize')
                     var probs = []
                     for (v in candidates) {
@@ -149,6 +162,9 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                     for (i in probs) {
                         probs[i] = probs[i] / probs_sum
                     }
+                    if (y_val != max_y) {
+                        candidates = candidates.slice(0, 20)
+                    }
                     count = 0
                     if (chosen.size > 0) {
                         for (s in layer_dictionary[y]) {
@@ -159,15 +175,16 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                     }
                     if (layer_sample > count) {
                         var samples = new Set()
-                        if (candidates.length < layer_sample - count) {
+                        if (y_val == max_y || candidates.length < layer_sample - count) {
                             for (var x = 0; x < candidates.length; x++) {
                                 samples.add(candidates[x]['subreddit'])
                             }
                         } else {
-                            for (var x = 0; x < (layer_sample - count); x++) {
+                            for (var x = 0; x < (layer_sample - count) * 2 && x < candidates.length; x++) {
                                 samples.add(candidates[x]['subreddit'])
                             }
                         }
+                        console.log(samples.size)
                         samples.forEach(function(i) {
                             chosen.add(i)
                         });
@@ -196,7 +213,12 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
             }
 
             function prep_data(chosen) {
-                chosen = Array.from(chosen)
+                chosen_copy = chosen
+                chosen = Array.from(chosen);
+                chosen_layer = {}
+                chosen.forEach(function(d) {
+                    chosen_layer[d] = layer_dict[d];
+                });
                 nodes = new Set()
                 tree_nodes = []
                 multiparentnodes = []
@@ -205,14 +227,15 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 parent_nodes = new Set()
                 for (node in chosen) {
                     curr = chosen[node];
+                    curr_layer = chosen_layer[curr];
                     if (curr != undefined && graph[curr] != undefined) {
                         Object.keys(graph[curr]).forEach(function(p) {
-                            if (child_nodes.has(curr)) {
-                                multiparentnodes.push({
-                                    id: curr,
-                                    parent: p
-                                });
-                            } else {
+                            if (!(chosen_copy.has(p))) {
+                                //Do nothing
+                            } else if (!(child_nodes.has(curr)) &&
+                                layer_dict[p] + 1 == layer_dict[curr] &&
+                                chosen_copy.has(p)) {
+                                console.log(layer_dict[curr], layer_dict[p])
                                 child_nodes.add(curr)
                                 if (parent_nodes.has(curr)) {
                                     parent_nodes.delete(curr)
@@ -225,6 +248,12 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                                     id: curr,
                                     parent: p
                                 });
+                            } else if (child_nodes.has(curr)) {
+                                multiparentnodes.push({
+                                    id: curr,
+                                    parent: p
+                                });
+
                             }
                         })
                     }
@@ -244,23 +273,48 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 });
                 console.log("tree : " + tree_nodes.length)
                 console.log('multiparentnodes : ' + multiparentnodes.length)
-                tree_nodes = stratify(tree_nodes)
-                    .sort(function(a, b) {
-                        return post_to_size[b.id] - post_to_size[a.id];
-                    });
+                try {
+                    tree_nodes = stratify(tree_nodes)
+                        .sort(function(a, b) {
+                            return post_to_size[b.id] - post_to_size[a.id];
+                        });
+
+                } catch (e) {
+                    $('.center').addClass('hide')
+                }
+                var rootData = $.extend(true, {}, tree_nodes);
+                rootData.children.forEach(function(d) {
+                    if (d.height < 5) {
+                        tree_nodes.children.removeValue('id', d.id);
+                    }
+                });
                 return [tree_nodes, multiparentnodes];
             }
-            initial_samples = ["MemeEconomy", "AskThe_Donald", "bidenbro", "cynicalbritofficial",
+            this.initial_samples = ["MemeEconomy", "AskThe_Donald", "bidenbro", "cynicalbritofficial",
                 "OverwatchUniversity", "battlefield_one", "2meirl4meirl", "CatTaps",
-                "evilbuildings", "fixingmovies"
+                "evilbuildings", "fixingmovies", "worldnews", "reddit.com", "politics", "science", "entertainment",
+                "business", "programming", "sports", "gaming", "gadgets", "netsec", "ads", "pics", "cogsci", "request", "features",
+                "wikipedia", "blogs", "astro", "productivity", "environment", "Hillary", "Christianity",
+                "hot", "history", "scifi", "Pets", "philosophy", "China", "virtualization", "firefox",
+                "iphone", "food", "hackers", "microsoft", "craigslist", "Transhuman", "insomnia", "humor",
+                "howto", "religion", "sex", "florida", "google", "fsm", "Art", "startups", "dailywt"
             ]
+
 
             var chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample)
             var prep = prep_data(chosen_nodes[0]);
+
+
             var treeData = prep[0];
+
             var pairnodes = prep[1];
             var selectData = treeData
             var autocomplete = []
+
+            var div = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+
             autocomplete = extract_select2_data(selectData, [], 0);
             $('.typeahead').typeahead({
                 hint: true,
@@ -275,14 +329,14 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
             var selectedNode = null;
             var draggingNode = null;
             var panSpeed = 200;
-            var panBoundary = 20; 
+            var panBoundary = 20;
             var i = 0;
             var duration = 750;
             var root;
             var viewerWidth = $(document).width();
             var viewerHeight = $(document).height();
             var tree = d3.layout.tree()
-                .size([viewerHeight, viewerWidth]);
+                .size([viewerHeight, viewerWidth])
             var diagonal = d3.svg.diagonal()
                 .projection(function(d) {
                     return [d.x, d.y];
@@ -291,6 +345,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 .projection(function(d) {
                     return [d.x, d.y];
                 });
+
             function visit(parent, visitFn, childrenFn) {
                 if (!parent) return;
                 visitFn(parent);
@@ -308,6 +363,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
             }, function(d) {
                 return d.children && d.children.length > 0 ? d.children : null;
             });
+
             function zoom() {
                 svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
             }
@@ -322,7 +378,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
             svgGroup.append('defs').append('marker')
                 .attr('id', 'arrowhead')
                 .attr('viewBox', '0 -5 10 10 ')
-                .attr('markerUnits','userSpaceOnUse')
+                .attr('markerUnits', 'userSpaceOnUse')
                 .attr('refX', 15)
                 .attr('refY', 0)
                 .attr('orient', 'auto')
@@ -336,7 +392,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
             svgGroup.append('defs').append('marker')
                 .attr('id', 'reversearrowhead')
                 .attr('viewBox', '0 -2 5 5 ')
-                .attr('markerUnits','userSpaceOnUse')
+                .attr('markerUnits', 'userSpaceOnUse')
                 .attr('refX', 0)
                 .attr('refY', 0)
                 .attr('orient', '')
@@ -352,21 +408,21 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
             defs.append("marker")
                 .attr("id", "triangle-start")
                 .attr("viewBox", "0 0 10 10")
-                .attr('markerUnits','userSpaceOnUse')
+                .attr('markerUnits', 'userSpaceOnUse')
                 .attr("refX", 15)
                 .attr("refY", 5)
                 .attr("markerWidth", 13)
-                .attr("markerHeight",13)
+                .attr("markerHeight", 13)
                 .attr("orient", "auto")
                 .append("path")
                 .attr("d", "M 0 0 L 10 5 L 0 10 z");
 
-            
+
             root = treeData;
             root.x0 = viewerHeight / 10;
             root.y0 = 0;
             update(root, true, pairnodes);
-            centerNode(root);
+            centerNode(root.children[0]);
             _root = root
 
             function collapse(d) {
@@ -422,7 +478,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 x = -source.x0;
                 y = -source.y0;
                 x = x * scale + viewerWidth / 2;
-                y = y * scale;
+                y = y * scale + viewerHeight / 10;
                 d3.select('g').transition()
                     .duration(duration)
                     .attr("transform", "translate(" + x + "," + y + ")scale(" + scale + ")");
@@ -553,8 +609,12 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 // Compute the new tree layout.
                 var nodes = tree.nodes(root).reverse(),
                     links = tree.links(nodes);
-
-                // Set widths between levels based on maxLabelLength.
+                // nodes.forEach(function(d) {
+                //     if(d.depth != 0){
+                //         d.depth = layer_dict[d.id]+1;
+                //     }
+                // });
+                //Set widths between levels based on maxLabelLength.
                 nodes.forEach(function(d) {
                     d.y = (d.depth * (maxLabelLength * 10)); //maxLabelLength * 10px
                 });
@@ -589,7 +649,23 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                         return graph[d.child.id][d.parent.id] * 20;
                     })
                     .attr('marker-end', 'url(#triangle-start)');
-                    
+                additionalParentLink.on("mouseover", function(d) {
+                        div.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        div.html(Math.floor(graph[d.child.id][d.parent.id] * 100) + ' Early Adopters' + "<br/>")
+                            .style("left", (d3.event.pageX + 10) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px")
+                            .style("width", 80 + "px")
+                            .style("height", 30 + "px");
+
+                    })
+                    .on("mouseout", function(d) {
+                        div.transition()
+                            .duration(200)
+                            .style("opacity", 0);
+                    });
+
                 node = svgGroup.selectAll("g.node")
                     .data(nodes, function(d) {
                         return d.id || (d.id = ++i);
@@ -599,7 +675,22 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 // Enter any new nodes at the parent's previous position.
                 var nodeEnter = node.enter().append("g")
                     .attr("class", "node")
-                    .on('click', click);
+                    .on('click', click)
+                    .on("mouseover", function(d) {
+                        div.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        div.html(d.id + "<br/>")
+                            .style("left", (d3.event.pageX + 10) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px")
+                            .style("width", (d.id.length) * 10 + "px")
+                            .style("height", 30 + "px");
+                    })
+                    .on("mouseout", function(d) {
+                        div.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    });
                 nodeEnter.append("circle")
                     .attr('class', 'nodeCircle')
                     .attr("r", 0)
@@ -607,7 +698,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                         if (d.class === "found") {
                             return "#ff4136"; //red
                         }
-                        return d._children ? "#000000" : "#049ae5";
+                        return d._children ? "#005796" : "#049ae5";
                     })
                     .style("stroke", function(d) {
                         if (d.id == 'root') {
@@ -626,7 +717,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                     });
                 nodeEnter.append("text")
                     .attr("y", function(d) {
-                        return -10;
+                        return -14;
                     })
                     .attr("x", function(d) {
                         return 0;
@@ -691,7 +782,7 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                         if (d.class === "found") {
                             return "#ff4136"; //red
                         }
-                        return d._children ? "#000000" : "#049ae5";
+                        return d._children ? "#005796" : "#049ae5";
                     })
                     .style("fill-opacity", function(d) {
                         if (d.id == 'root') {
@@ -778,7 +869,22 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                     .attr('marker-end', function(d) {
                         return 'url(#arrowhead)';
                     });
+                link.on("mouseover", function(d) {
+                        div.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        div.html(graph[d.target.id][d.source.id] * 100 + ' Early Adopters' + "<br/>")
+                            .style("left", (d3.event.pageX + 10) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px")
+                            .style("width", 80 + "px")
+                            .style("height", 25 + "px");
 
+                    })
+                    .on("mouseout", function(d) {
+                        div.transition()
+                            .duration(200)
+                            .style("opacity", 0);
+                    });
                 // Transition exiting nodes to the parent's new position.
                 link.exit().transition()
                     .duration(duration)
@@ -807,9 +913,13 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
 
 
 
-                        $("#loadBtn").on("click", function(e) {
-                if (layer_sample >= 5) {
+            $("#loadBtn").on("click", function(e) {
+                $('.center').removeClass('hide')
+
+                if (layer_sample >= 10) {
                     $('#loadAlert').removeClass('hide')
+                    $('.center').addClass('hide')
+
                     return
                 }
                 layer_sample += 1
@@ -838,16 +948,21 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 var tempHeight = 50 * d3.max(levelWidth);
                 tree.size([tempWidth, tempHeight]);
                 update(root, true, temp_pair_nodes);
-                centerNode(root);
+                centerNode(root.children[0]);
                 _root = treeData
+                $('.center').addClass('hide')
+
             })
             $("#randomBtn").on("click", function(e) {
                 $('#loadAlert').addClass('hide');
+                $('.center').removeClass('hide')
+
                 init_random = new Set()
-                layer_sample = 2
+                layer_sample = 5
                 for (var i = 0; i < 5; i++) {
                     init_random.add(initial_samples[Math.floor((Math.random() * 100) % initial_samples.length)])
                 }
+                console.log(init_random)
                 var chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample, Array.from(init_random))
                 var prep = prep_data(chosen_nodes[0]);
                 var treeData = prep[0];
@@ -869,12 +984,13 @@ mutliPair = d3.csv("../../data/data-0.04.csv", function(error, entireTree) {
                 tree.size([tempWidth, tempHeight]);
 
                 update(root, true, temp_pair_nodes);
-                centerNode(root);
+                centerNode(root.children[0]);
                 _root = treeData
-            })
+                $('.center').addClass('hide')
 
+            })
+            $('.center').addClass('hide')
 
         });
     });
 });
-
