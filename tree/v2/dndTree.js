@@ -118,7 +118,8 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 post_to_size[post_size[i]['subreddit']] = parseInt(post_size[i]['size'])
             }
             //loaded data.
-            function sample_layer(graph_d3, layer_dictionary, posts_size, layer_sample, init_samples) {
+            function sample_layer(graph_d3, layer_dictionary, 
+                posts_size, layer_sample, init_samples) {
                 chosen = new Set()
                 ancestors = new Set()
                 if (init_samples) {
@@ -127,6 +128,9 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                     });
                 }
                 ancestors = add_ancestor(ancestors, chosen, graph_d3)
+                if(init_samples){
+                    ancestors.delete('reddit.com')
+                }
                 var yset = Object.keys(layer_dictionary)
                 yset.sort(function(a, b) {
                     return parseInt(b, 10) - parseInt(a, 10);
@@ -218,8 +222,10 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 return an
             }
 
-            function prep_data(chosen, isSearchFlow, searchTerm) {
+            function prep_data(chosen,isRandomFlow, isSearchFlow, searchTerm) {
                 chosen_copy = chosen
+                var rand_val = Math.random()
+                if(isRandomFlow) console.log(Math.floor(rand_val*4))
                 chosen = Array.from(chosen);
                 chosen_layer = {}
                 chosen.forEach(function(d) {
@@ -236,9 +242,10 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 for (node in chosen) {
                     curr = chosen[node];
                     curr_layer = chosen_layer[curr];
-                    if (curr != undefined && graph[curr] != undefined) {
+                    if(isRandomFlow && Math.floor(rand_val*4+1) > curr_layer){
+                            continue
+                    } else if (curr != undefined && graph[curr] != undefined) {
                         Object.keys(graph[curr]).forEach(function(p) {
-
                             if ((layer_dict[p] == 0 &&
                                     layer_dict[curr] == 0) || (!(chosen_copy.has(p)))) {
                                 // console.log('0', curr, p)
@@ -251,8 +258,9 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                                     parent_count[p]++;
                                 } else {
                                     parent_count[p] = 1
-                                }
-                                if (parent_count[p] > 5) {
+                                }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+                                if ((isRandomFlow &&parent_count[p] > rand_val*4+1)
+                                    ||(parent_count[p] > 3) ){
                                     multiparentnodes.push({
                                         id: curr,
                                         parent: p
@@ -353,16 +361,43 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
 
                 }
                 var rootData = $.extend(true, {}, tree_nodes);
-                rootData.children.forEach(function(d) {
+                if (isRandomFlow) {
+                    parent_count = {}
+                    rootData.children.sort(function() {
+                        return .5 - Math.random();
+                    });
+                    minLayer  = 100;
+                    rootData.children.forEach(function(d) {
+                            if(layer_dict[d.id] in parent_count){
+                                parent_count[layer_dict[d.id]]++;
+                            } else{
+                                parent_count[layer_dict[d.id]] = 1
+                            }
+                            if(layer_dict[d.id]<minLayer){
+                                minLayer =layer_dict[d.id]
+                            }
+                    });
+                    layer_count = 0
+                    rootData.children.forEach(function(d) {
+                            if(layer_count < 6 && 
+                                layer_dict[d.id] == minLayer){
+                                layer_count+=1
+                            } else {
+                                tree_nodes.children.removeValue('id', d.id);
+                            }
+                    });
+                } else {
+                    rootData.children.forEach(function(d) {
                     if (isSearchFlow && paths != undefined &&
                         paths[1].id == d.id) {
                         console.log('search flow ignore : ', d.id);
                     } else if (layer_dict[d.id] == 0) {
-                        console.log('top level ', d.id)
+                        //console.log('top level ', d.id)
                     } else if (d.height < 6) {
                         tree_nodes.children.removeValue('id', d.id);
                     }
-                });
+                    });
+                }
                 return [tree_nodes, multiparentnodes];
             }
             this.initial_samples = ["MemeEconomy", "AskThe_Donald", "bidenbro", "cynicalbritofficial",
@@ -637,29 +672,29 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 $('#loadAlert').addClass('hide');
                 $('.center').removeClass('hide')
                 searchTerm = document.getElementById('search').value
-                init_random = new Set()
-                    // for (var i = 0; i < 5; i++) {
-                    //     init_random.add(random_vals[Math.floor((Math.random() * 100) % random_vals.length)])
-                    // }
-                init_random.add(searchTerm)
+                var searchRandom = new Set()
+                // for (var i = 0; i < 5; i++) {
+                //     init_random.add(random_vals[Math.floor((Math.random() * 100) % random_vals.length)])
+                // }
+                searchRandom.add(searchTerm)
                 if (layer_dict[searchTerm] != 0) {
                     layer_sample = 3
                     Object.keys(graph[searchTerm]).forEach(function(d) {
-                        init_random.add(d)
+                        searchRandom.add(d)
                     });
                 } else {
                     layer_sample = 2
                     parentGraph[searchTerm].slice(0, 10).forEach(function(d) {
-                        init_random.add(d);
+                        searchRandom.add(d);
                         if (parentGraph[d] != undefined &&
                             parentGraph[d].length > 0) {
                             //init_random.add(parentGraph[d][0]);
                         }
                     })
                 }
-                console.log('init_samples for random :', init_random)
-                var chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample, Array.from(init_random))
-                var prep = prep_data(chosen_nodes[0], true, searchTerm);
+                console.log('init_samples for random :', searchRandom)
+                var chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample, Array.from(searchRandom))
+                var prep = prep_data(chosen_nodes[0], false,true, searchTerm);
                 var treeData = prep[0];
                 var temp_pair_nodes = prep[1];
                 root = treeData
@@ -744,9 +779,41 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 //     }
                 // });
                 //Set widths between levels based on maxLabelLength.
+                node_ids = new Set();
                 nodes.forEach(function(d) {
-                    d.y = (d.depth * (maxLabelLength * 8)); //maxLabelLength * 10px
+                    d.y = (d.depth * (maxLabelLength * 8));
+                     //maxLabelLength * 10px
+                     node_ids.add(d.id)
                 });
+                nodes.forEach(function(d) {
+                    if((d.children == undefined) &&
+                        (d._children == undefined) &&
+                         (parentGraph[d.id] != undefined)){
+                        child_ids = new Set();
+                         parentGraph[d.id].forEach(function(l){
+                            if(!node_ids.has(l)){
+                                child_ids.add(l)
+                            }
+                         });
+                    d._children = []
+                    Array.from(child_ids).slice(0,5).forEach(function(id){
+                        d._children.push({
+                            data:{
+                                    id: id,
+                                    parent: d.id
+                                 },
+                            depth: d.depth+1,
+                            height:0,
+                            parent:d,
+                            id: id
+                        })
+                    });
+
+                    } else{
+                        //console.log(d)
+                    }
+                })
+
                 d3.selectAll('path.link1').remove()
                 var additionalParentLink = svgGroup.selectAll("path.additionalParentLink")
                     .data(multiParents);
@@ -1002,7 +1069,7 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                         div.transition()
                             .duration(200)
                             .style("opacity", .9);
-                        div.html(graph[d.target.id][d.source.id] * 100 + ' Early Adopters' + "<br/>")
+                        div.html(Math.floor(graph[d.target.id][d.source.id] * 100) + ' Early Adopters' + "<br/>")
                             .style("left", (d3.event.pageX + 10) + "px")
                             .style("top", (d3.event.pageY - 20) + "px")
                             .style("width", 80 + "px")
@@ -1081,18 +1148,28 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 $('#loadAlert').addClass('hide');
                 $('.center').removeClass('hide')
 
-                init_random = new Set()
-                layer_sample = 3
-                    // for (var i = 0; i < 5; i++) {
-                    //     init_random.add(random_vals[Math.floor((Math.random() * 100) % random_vals.length)])
-                    // }
+                
+                layer_sample = 4
+                for (var i = 0; i < 5; i++) {
+
+                    init_random.add(reverse_dict[0][Math.floor((Math.random() * 100) % reverse_dict[0].length)])
+                }
+                parent_temp = undefined
                 Object.keys(reverse_dict).forEach(function(d) {
                     temp = reverse_dict[d]
-                    init_random.add(temp[Math.floor((Math.random() * 100) % temp.length)]);
+                    if (parent_temp == undefined) {
+                        parent_temp = temp[Math.floor((Math.random() * 100) % temp.length)]
+                        init_random.add(parent_temp);
+                    } else {
+                        if (parentGraph[parent_temp] && parentGraph[parent_temp].length > 0) {
+                            samp = (parentGraph[parent_temp][Math.floor((Math.random() * 100) % parentGraph[parent_temp].length)])
+                            init_random.add(samp)
+                            parent_temp = samp
+                        }
+                    }
                 })
-                console.log(init_random)
-                var chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample, Array.from(init_random))
-                var prep = prep_data(chosen_nodes[0]);
+                var chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample, Array.from(init_random),true)
+                var prep = prep_data(chosen_nodes[0],true);
                 var treeData = prep[0];
                 var temp_pair_nodes = prep[1];
                 root = treeData
@@ -1107,10 +1184,14 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                     }
                 };
                 childCount(0, root);
+
                 var tempWidth = d3.max(levelWidth) * 3 * maxLabelLength;
                 var tempHeight = 50 * d3.max(levelWidth);
-                tree.size([tempWidth, tempHeight]);
-
+                if(viewerWidth< tempWidth &&
+                    viewerHeight < tempHeight){
+                   tree.size([tempWidth, tempHeight]);
+                }
+ 
                 update(root, true, temp_pair_nodes);
                 centerNode(root.children[Math.floor(root.children.length / 2)]);
                 _root = treeData
