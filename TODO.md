@@ -1,5 +1,2 @@
 ## To be incorporated
-* increase the font size
-* change the number limit at each layer
-* Random return reddit.com most of time - add top level nodes in init.
-* random button on graph view
+* children on click - tree view (ex: news doesn't have any children in tree view.)
