@@ -73,22 +73,30 @@ function searchTree(obj, search, path) {
     }
 }
 
-var layer_sample = 5
+var layer_sample = 3
 var graph = {};
 var layer_dict = {};
 var reverse_dict = {};
 var init_random = new Set();
-
+var parentGraph = {}
 mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
-    console.log(entireTree.length)
     for (var i = 0; i < entireTree.length; i++) {
         if (entireTree[i]['id'] in graph) {
             graph[entireTree[i]['id']][entireTree[i]['parent']] = parseFloat(entireTree[i]['score'], 10)
+
         } else {
             graph[entireTree[i]['id']] = {}
             graph[entireTree[i]['id']][entireTree[i]['parent']] = parseFloat(entireTree[i]['score'], 10)
+
+        }
+        if (entireTree[i]['parent'] in parentGraph) {
+            parentGraph[entireTree[i]['parent']].push(entireTree[i]['id'])
+        } else {
+            parentGraph[entireTree[i]['parent']] = []
+            parentGraph[entireTree[i]['parent']].push(entireTree[i]['id'])
         }
     }
+
     layers = d3.csv("../../data/layer_year.csv", function(error, layerData) {
 
         for (var i = 0; i < layerData.length; i++) {
@@ -148,7 +156,6 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                     }
                     if (candidates.length == 0)
                         continue
-                        //console.log(candidates.length, y_val)
                     sortByKey(candidates, 'postSize')
                     var probs = []
                     for (v in candidates) {
@@ -161,9 +168,6 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                     probs_sum = probs.reduce(getSum);
                     for (i in probs) {
                         probs[i] = probs[i] / probs_sum
-                    }
-                    if (y_val != max_y) {
-                        candidates = candidates.slice(0, 20)
                     }
                     count = 0
                     if (chosen.size > 0) {
@@ -180,11 +184,13 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                                 samples.add(candidates[x]['subreddit'])
                             }
                         } else {
-                            for (var x = 0; x < (layer_sample - count) * 2 && x < candidates.length; x++) {
+                            for (var x = 0; x < (layer_sample - count) * 3 && x < candidates.length; x++) {
                                 samples.add(candidates[x]['subreddit'])
                             }
                         }
-                        console.log(samples.size)
+                        // for (var x = 0; x < candidates.length; x++) {
+                        //          samples.add(candidates[x]['subreddit'])
+                        // }
                         samples.forEach(function(i) {
                             chosen.add(i)
                         });
@@ -212,57 +218,116 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 return an
             }
 
-            function prep_data(chosen) {
+            function prep_data(chosen, isSearchFlow, searchTerm) {
                 chosen_copy = chosen
                 chosen = Array.from(chosen);
                 chosen_layer = {}
                 chosen.forEach(function(d) {
                     chosen_layer[d] = layer_dict[d];
                 });
+                parent_count = {}
                 nodes = new Set()
                 tree_nodes = []
                 multiparentnodes = []
                 child_nodes = new Set()
                 temp_nodes = new Set()
                 parent_nodes = new Set()
+                search_term_parents = {}
                 for (node in chosen) {
                     curr = chosen[node];
                     curr_layer = chosen_layer[curr];
                     if (curr != undefined && graph[curr] != undefined) {
                         Object.keys(graph[curr]).forEach(function(p) {
-                            if (!(chosen_copy.has(p))) {
-                                //Do nothing
-                            } else if (!(child_nodes.has(curr)) &&
-                                layer_dict[p] + 1 == layer_dict[curr] &&
-                                chosen_copy.has(p)) {
-                                console.log(layer_dict[curr], layer_dict[p])
-                                child_nodes.add(curr)
-                                if (parent_nodes.has(curr)) {
-                                    parent_nodes.delete(curr)
+
+                            if ((layer_dict[p] == 0 &&
+                                    layer_dict[curr] == 0) || (!(chosen_copy.has(p)))) {
+                                // console.log('0', curr, p)
+                                //ignore same level for 0.
+                            } else if (isSearchFlow && curr == searchTerm) {
+                                search_term_parents[p] = layer_dict[p]
+                            } else if ((!(child_nodes.has(curr)) &&
+                                    layer_dict[p] + 1 == layer_dict[curr])) {
+                                if (p in parent_count) {
+                                    parent_count[p]++;
+                                } else {
+                                    parent_count[p] = 1
                                 }
-                                if (!temp_nodes.has(p)) {
-                                    parent_nodes.add(p)
-                                    temp_nodes.add(p)
+                                if (parent_count[p] > 5) {
+                                    multiparentnodes.push({
+                                        id: curr,
+                                        parent: p
+                                    });
+                                } else {
+                                    child_nodes.add(curr)
+                                    if (parent_nodes.has(curr)) {
+                                        parent_nodes.delete(curr)
+                                    }
+                                    if (!temp_nodes.has(p)) {
+                                        parent_nodes.add(p)
+                                        temp_nodes.add(p)
+                                    }
+                                    tree_nodes.push({
+                                        id: curr,
+                                        parent: p
+                                    });
+
                                 }
-                                tree_nodes.push({
-                                    id: curr,
-                                    parent: p
-                                });
+
                             } else if (child_nodes.has(curr)) {
                                 multiparentnodes.push({
                                     id: curr,
                                     parent: p
                                 });
-
                             }
                         })
                     }
                 }
-                parent_nodes.forEach(function(d) {
-                    tree_nodes.push({
-                        id: d,
-                        parent: 'root'
+                if (isSearchFlow && Object.keys(search_term_parents).length != 0) {
+                    var items = Object.keys(search_term_parents).map(function(key) {
+                        return [key, search_term_parents[key]];
                     });
+
+                    items.sort(function(first, second) {
+                        return second[1] - first[1];
+                    });
+                    parent_curr = items[0][0]
+                    curr = searchTerm
+                    if (parent_nodes.has(curr)) {
+                        parent_nodes.delete(curr)
+                    }
+                    if (!temp_nodes.has(parent_curr)) {
+                        parent_nodes.add(parent_curr)
+                        temp_nodes.add(parent_curr)
+                    }
+                    tree_nodes.push({
+                        id: curr,
+                        parent: parent_curr
+                    });
+                    items = items.slice(1)
+                    items.forEach(function(d) {
+                        multiparentnodes.push({
+                            id: curr,
+                            parent: d[0]
+                        });
+                    });
+                } else if (isSearchFlow && Object.keys(search_term_parents).length == 0) {
+                    tree_nodes.push({
+                        id: searchTerm,
+                        parent: 'root'
+                    })
+                }
+                parent_nodes.forEach(function(d) {
+                    if (Object.keys(tree_nodes.filter(function(x) {
+                            return d == x.id;
+                        })).length > 0) {
+                        console.log('err:', d);
+                    } else {
+                        tree_nodes.push({
+                            id: d,
+                            parent: 'root'
+                        });
+
+                    }
                 });
                 tree_nodes.push({
                     id: 'root',
@@ -280,11 +345,21 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                         });
 
                 } catch (e) {
+                    console.log(e);
                     $('.center').addClass('hide')
+                }
+                if (isSearchFlow) {
+                    var paths = searchTree(tree_nodes, searchTerm, []);
+
                 }
                 var rootData = $.extend(true, {}, tree_nodes);
                 rootData.children.forEach(function(d) {
-                    if (d.height < 5) {
+                    if (isSearchFlow && paths != undefined &&
+                        paths[1].id == d.id) {
+                        console.log('search flow ignore : ', d.id);
+                    } else if (layer_dict[d.id] == 0) {
+                        console.log('top level ', d.id)
+                    } else if (d.height < 6) {
                         tree_nodes.children.removeValue('id', d.id);
                     }
                 });
@@ -422,7 +497,7 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
             root.x0 = viewerHeight / 10;
             root.y0 = 0;
             update(root, true, pairnodes);
-            centerNode(root.children[0]);
+            centerNode(root.children[Math.floor(root.children.length / 2)]);
             _root = root
 
             function collapse(d) {
@@ -516,48 +591,103 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                     }
                 }
             }
+            // $("#searchBtn").on("click", function(e) {
+            //     searchTerm = document.getElementById('search').value
+            //     var paths = searchTree(root, searchTerm, []);
+            //     if (typeof(paths) !== "undefined") {
+            //         openPaths(paths);
+            //     } else {
+            //         notFound = true
+            //         for (i in graph[searchTerm]) {
+            //             paths = searchTree(root, i, []);
+            //             if (typeof(paths) !== "undefined") {
+            //                 last = paths.slice(-1)[0]
+            //                 child_path = {
+            //                     data: {
+            //                         id: searchTerm,
+            //                         parent: last.id
+            //                     },
+            //                     depth: last.depth + 1,
+            //                     height: 1,
+            //                     id: searchTerm,
+            //                     parent: paths.slice(-1),
+            //                     class: "found"
+            //                 };
+            //                 if (paths.slice(-1)[0]._children) {
+            //                     paths.slice(-1)[0]._children.push(child_path)
+            //                 } else if (paths.slice(-1)[0].children) {
+            //                     paths.slice(-1)[0].children.push(child_path)
+            //                 } else {
+            //                     paths.slice(-1)[0]._children = []
+            //                     paths.slice(-1)[0]._children.push(child_path)
+
+            //                 }
+            //                 openPaths(paths);
+            //                 notFound = false
+            //                 break;
+            //             }
+            //         }
+            //         if (notFound) {
+            //             alert(searchTerm + " not found!");
+            //         }
+            //     }
+            // })
+
             $("#searchBtn").on("click", function(e) {
+                $('#loadAlert').addClass('hide');
+                $('.center').removeClass('hide')
                 searchTerm = document.getElementById('search').value
+                init_random = new Set()
+                    // for (var i = 0; i < 5; i++) {
+                    //     init_random.add(random_vals[Math.floor((Math.random() * 100) % random_vals.length)])
+                    // }
+                init_random.add(searchTerm)
+                if (layer_dict[searchTerm] != 0) {
+                    layer_sample = 3
+                    Object.keys(graph[searchTerm]).forEach(function(d) {
+                        init_random.add(d)
+                    });
+                } else {
+                    layer_sample = 2
+                    parentGraph[searchTerm].slice(0, 10).forEach(function(d) {
+                        init_random.add(d);
+                        if (parentGraph[d] != undefined &&
+                            parentGraph[d].length > 0) {
+                            //init_random.add(parentGraph[d][0]);
+                        }
+                    })
+                }
+                console.log('init_samples for random :', init_random)
+                var chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample, Array.from(init_random))
+                var prep = prep_data(chosen_nodes[0], true, searchTerm);
+                var treeData = prep[0];
+                var temp_pair_nodes = prep[1];
+                root = treeData
+                var levelWidth = [1];
+                var childCount = function(level, n) {
+                    if (n.children && n.children.length > 0) {
+                        if (levelWidth.length <= level + 1) levelWidth.push(0);
+                        levelWidth[level + 1] += n.children.length;
+                        n.children.forEach(function(d) {
+                            childCount(level + 1, d);
+                        });
+                    }
+                };
+                childCount(0, root);
+                var tempWidth = d3.max(levelWidth) * 3 * maxLabelLength;
+                var tempHeight = 50 * d3.max(levelWidth);
+                tree.size([tempWidth, tempHeight]);
+                update(root, true, temp_pair_nodes);
+                centerNode(root.children[Math.floor(root.children.length / 2)]);
+                _root = treeData
                 var paths = searchTree(root, searchTerm, []);
                 if (typeof(paths) !== "undefined") {
                     openPaths(paths);
                 } else {
-                    notFound = true
-                    for (i in graph[searchTerm]) {
-                        paths = searchTree(root, i, []);
-                        if (typeof(paths) !== "undefined") {
-                            last = paths.slice(-1)[0]
-                            child_path = {
-                                data: {
-                                    id: searchTerm,
-                                    parent: last.id
-                                },
-                                depth: last.depth + 1,
-                                height: 1,
-                                id: searchTerm,
-                                parent: paths.slice(-1),
-                                class: "found"
-                            };
-                            if (paths.slice(-1)[0]._children) {
-                                paths.slice(-1)[0]._children.push(child_path)
-                            } else if (paths.slice(-1)[0].children) {
-                                paths.slice(-1)[0].children.push(child_path)
-                            } else {
-                                paths.slice(-1)[0]._children = []
-                                paths.slice(-1)[0]._children.push(child_path)
-
-                            }
-                            openPaths(paths);
-                            notFound = false
-                            break;
-                        }
-                    }
-                    if (notFound) {
-                        alert(searchTerm + " not found!");
-                    }
+                    alert(searchTerm + " not found!");
                 }
+                $('.center').addClass('hide')
             })
-
 
             function update(source, resize, multipairnodes) {
                 var levelWidth = [1];
@@ -587,8 +717,7 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                     });
                     if (parent_1 != undefined && parent_1.length > 0 &&
                         child_1 != undefined && child_1.length) {
-                        if (parent_1[0]._children != undefined ||
-                            parent_1[0].depth == child_1[0].depth) {
+                        if (parent_1[0].depth == child_1[0].depth) {
                             continue
                         } else {
                             multiParents.push({
@@ -600,7 +729,7 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 }
 
                 //var newHeight = d3.max(levelWidth) * 25;
-                var newWidth = d3.max(levelWidth) * 3 * maxLabelLength;
+                var newWidth = d3.max(levelWidth) * 5 * maxLabelLength;
                 var newHeight = 50 * d3.max(levelWidth);
                 // 25 pixels per line
                 if (resize && viewerHeight < newHeight && viewerWidth < newWidth) {
@@ -616,7 +745,7 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 // });
                 //Set widths between levels based on maxLabelLength.
                 nodes.forEach(function(d) {
-                    d.y = (d.depth * (maxLabelLength * 10)); //maxLabelLength * 10px
+                    d.y = (d.depth * (maxLabelLength * 8)); //maxLabelLength * 10px
                 });
                 d3.selectAll('path.link1').remove()
                 var additionalParentLink = svgGroup.selectAll("path.additionalParentLink")
@@ -908,15 +1037,10 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
 
 
             }
-
-
-
-
-
             $("#loadBtn").on("click", function(e) {
                 $('.center').removeClass('hide')
 
-                if (layer_sample >= 10) {
+                if (layer_sample >= 6) {
                     $('#loadAlert').removeClass('hide')
                     $('.center').addClass('hide')
 
@@ -948,7 +1072,7 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 var tempHeight = 50 * d3.max(levelWidth);
                 tree.size([tempWidth, tempHeight]);
                 update(root, true, temp_pair_nodes);
-                centerNode(root.children[0]);
+                centerNode(root.children[Math.floor(root.children.length / 2)]);
                 _root = treeData
                 $('.center').addClass('hide')
 
@@ -958,10 +1082,14 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 $('.center').removeClass('hide')
 
                 init_random = new Set()
-                layer_sample = 5
-                for (var i = 0; i < 5; i++) {
-                    init_random.add(initial_samples[Math.floor((Math.random() * 100) % initial_samples.length)])
-                }
+                layer_sample = 3
+                    // for (var i = 0; i < 5; i++) {
+                    //     init_random.add(random_vals[Math.floor((Math.random() * 100) % random_vals.length)])
+                    // }
+                Object.keys(reverse_dict).forEach(function(d) {
+                    temp = reverse_dict[d]
+                    init_random.add(temp[Math.floor((Math.random() * 100) % temp.length)]);
+                })
                 console.log(init_random)
                 var chosen_nodes = sample_layer(graph, reverse_dict, post_to_size, layer_sample, Array.from(init_random))
                 var prep = prep_data(chosen_nodes[0]);
@@ -984,7 +1112,7 @@ mutliPair = d3.csv("../../data/data.csv", function(error, entireTree) {
                 tree.size([tempWidth, tempHeight]);
 
                 update(root, true, temp_pair_nodes);
-                centerNode(root.children[0]);
+                centerNode(root.children[Math.floor(root.children.length / 2)]);
                 _root = treeData
                 $('.center').addClass('hide')
 

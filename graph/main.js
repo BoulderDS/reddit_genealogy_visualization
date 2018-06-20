@@ -4,14 +4,15 @@ var graph = {
     },
 
 
-barabasiAlbert = BarabasiAlbert(graph);
-graphVis = GraphVis(graph),
+dataGraph = BarabasiAlbert(graph);
+dataGraph.init();
+visualization = GraphVis(graph),
     previousTime = -1,
     tickTimes = [],
     tickSamples = 5,
     nodeStep = 1000;
 var count = 0;
-graphVis.onTick(function() {
+visualization.onTick(function() {
     count += 1
     var currentTime = Date.now();
     if (previousTime !== -1) {
@@ -26,21 +27,28 @@ graphVis.onTick(function() {
 
 function addNodes(n) {
     for (var i = 0; i < n; i++) {
-        barabasiAlbert.addNode();
+        dataGraph.addNode();
     }
-    graphVis.update();
+    visualization.update();
 }
 
-graphVis.update();
+function reset(){
+    graph.nodes = []
+    graph.links = []
+    d3.selectAll('line.link').remove();
+    d3.selectAll('g.node').remove();
+    dataGraph.resetGraph();
+}
 
-barabasiAlbert.ondataLoad(function(n) {
+visualization.update();
+dataGraph.ondataLoad(function(n) {
     for (var i = 0; i < n; i++) {
-        barabasiAlbert.addNode();
+        dataGraph.addNode();
     }
-    graphVis.update();
+    visualization.update();
 });
 
-barabasiAlbert.autocomplete(function() {
+dataGraph.autocomplete(function() {
     var substringMatcher = function(strs) {
         return function findMatches(q, cb) {
             var matches, substringRegex;
@@ -55,7 +63,7 @@ barabasiAlbert.autocomplete(function() {
         };
     };
     var states = [];
-    var tempNodes = barabasiAlbert.getNodes();
+    var tempNodes = dataGraph.getNodes();
     for (var i = 0; i < tempNodes.length; i++) {
         states.push(tempNodes[i].id)
     }
@@ -79,8 +87,8 @@ function createTree() {
     var btn = document.getElementById('loadBtn')
     btn.disabled = true;
     child.innerHTML = 'Connections for : ' + source;
-    graphVis.destroy()
-    data = barabasiAlbert.getLinks();
+    visualization.destroy()
+    data = dataGraph.getLinks();
     targets = []
     for (var i = 0; i < data.length; i++) {
         link = data[i]
