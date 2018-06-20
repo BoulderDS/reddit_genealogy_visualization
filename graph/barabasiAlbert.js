@@ -181,8 +181,8 @@ function BarabasiAlbert(graph) {
                 Object.keys(community_graph[curr]).forEach(function(p) {
                     nodes.add(p)
                     community_graph_links.push({
-                        source: curr,
-                        target: p,
+                        source: p,
+                        target: curr,
                         value: community_graph[curr][p]
                     })
                 })
