@@ -36,15 +36,16 @@ function GraphVis(graph) {
     var container = svg.append("g");
     svg.append('defs').append('marker')
         .attr('id', 'arrowhead')
-        .attr('viewBox', '0 0 10 10 ')
-        .attr('refX', 9)
-        .attr('refY', 4)
+        .attr('markerUnits', 'userSpaceOnUse')
+        .attr('viewBox', '0 -5 10 10 ')
+        .attr('refX', 20)
+        .attr('refY', 0)
         .attr('orient', 'auto')
-        .attr('markerWidth', 5)
-        .attr('markerHeight', 5)
+        .attr('markerWidth', 10)
+        .attr('markerHeight', 10)
         .attr('xoverflow', 'visible')
         .append('svg:path')
-        .attr('d', 'M-6,-6 L8,4 L-6,8 L6,6 L-6,-6')
+        .attr('d', 'M 0,-5 L 10 ,0 L 0,5 ')
         .attr('fill', '#000000')
         .style('stroke-width', '2px')
         .style('stroke', 'none');
@@ -73,13 +74,16 @@ function GraphVis(graph) {
         node.append("circle")
             .attr("r", function(d){
                 if(d.postSize > 1){
+                    if(d.postSize == 14){
+                        return 20;
+                    }
                     return d.postSize ;
                 } else{
                     return 2;
                 }
             })
             .style("fill", function(d) {
-                return color(d.id)
+                return color(d.depth)
             });
         node.append("title")
             .text(function(d) {
