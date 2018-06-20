@@ -1,3 +1,5 @@
 ## To be incorporated
-* depth issue with tree view (unable to manually update depth - d3)
-* change sampling of middle layer
+* increase the font size
+* change the number limit at each layer
+* Random return reddit.com most of time - add top level nodes in init.
+* random button on graph view
