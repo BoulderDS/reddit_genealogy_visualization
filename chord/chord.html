@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <head>
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-121245297-1"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+		gtag('config', 'UA-121245297-1');
+	</script>
 	<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 	<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
 	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
@@ -133,14 +140,14 @@
 				Parent view
 				</button>
 				<!-- <li id='parent_view' class="active" title='Click on one of the chord to view children'
-						onclick="setActive(this.id)"><a>Parent View</a></li>
-						<li id='child_view' onclick="setActive(this.id)"
+							onclick="setActive(this.id)"><a>Parent View</a></li>
+							<li id='child_view' onclick="setActive(this.id)"
 						title='Click on one of the chord to view parents' ><a>Child view</a></li> -->
 					</ul>
 				</div>
 				<!-- <div class="alert alert-info" style="padding-bottom:  0px;margin-bottom: 2px;">
-						<p id = 'child_view_info' disabled>Click on one of the chord to view parents</p>
-						<p id = 'parent_view_info' >Click on one of the chord to view children</p>
+							<p id = 'child_view_info' disabled>Click on one of the chord to view parents</p>
+							<p id = 'parent_view_info' >Click on one of the chord to view children</p>
 				</div> -->
 			</header>
 			<script src="chord.js"> </script>
