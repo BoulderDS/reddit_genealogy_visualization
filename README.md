@@ -1,6 +1,6 @@
 # Tracing Community Genealogy: How New Communities Emerge from the Old
 
-This repo has dataset and code for visualization of paper : Tracing Community Genealogy: How New Communities Emerge from the Old\
+This repo has dataset and code for visualization of paper : Tracing Community Genealogy: How New Communities Emerge from the Old
 
 
 ## Dataset present in data directory : 
